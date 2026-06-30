@@ -1,0 +1,48 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: loadtest-redis
+    ports:
+      - "6379:6379"
+
+  influxdb:
+    image: influxdb:2-alpine
+    container_name: loadtest-influxdb
+    ports:
+      - "8086:8086"
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: loadtest-grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - influxdb
+    logging:
+      driver: "none"
+      
+  orchestrator:
+    build: ./orchestrator/Orchestrator
+    container_name: loadtest-orchestrator
+    ports:
+      - "5000:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    depends_on:
+      - redis
+  
+  worker:
+    build: ./worker/Worker
+    container_name: loadtest-worker
+    environment:
+      - INFLUX_URL=${INFLUX_URL}
+      - INFLUX_TOKEN=${INFLUX_TOKEN}
+      - INFLUX_ORG=${INFLUX_ORG}
+      - INFLUX_BUCKET=${INFLUX_BUCKET}
+    depends_on:
+      - redis
+      - influxdb
+volumes:
+  influxdb-data:
