@@ -63,11 +63,27 @@ while (true)
                         var response = await httpClient.GetAsync(url);
                         stopwatch.Stop();
                         Console.WriteLine($"[{i}] {(int)response.StatusCode} - {stopwatch.ElapsedMilliseconds}ms");
+
+                        var requestPoint = PointData.Measurement("http_requests")
+                            .Tag("url", url)
+                            .Field("status_code", (int)response.StatusCode)
+                            .Field("response_time_ms", stopwatch.ElapsedMilliseconds)
+                            .Timestamp(DateTime.UtcNow, WritePrecision.Ms);  
+
+                        await writeApi.WritePointAsync(requestPoint, influxBucket, influxOrg);                      
                     }
                     catch (Exception ex)
                     {
                         stopwatch.Stop();
                         Console.WriteLine($"  [{i}] ERROR - {stopwatch.ElapsedMilliseconds}ms - {ex.Message}");
+                    
+                        var errorPoint = PointData.Measurement("http_requests")
+                            .Tag("url", url)
+                            .Field("status_code", 0)
+                            .Field("response_time_ms", stopwatch.ElapsedMilliseconds)
+                            .Timestamp(DateTime.UtcNow, WritePrecision.Ms);
+
+                        await writeApi.WritePointAsync(errorPoint, influxBucket, influxOrg);
                     }
                 });
 
