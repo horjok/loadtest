@@ -12,6 +12,10 @@ services:
       - "8086:8086"
     volumes:
       - influxdb-data:/var/lib/influxdb2
+    logging:
+      driver: "none"
+    environment:
+      - INFLUXD_LOG_LEVEL=error
 
   grafana:
     image: grafana/grafana:latest
@@ -22,6 +26,9 @@ services:
       - influxdb
     logging:
       driver: "none"
+    environment:
+      - GF-SECURITY_ADMIN_PASSWORD=admin
+      - GF_LOG_LEVEL=error
       
   orchestrator:
     build: ./orchestrator/Orchestrator
